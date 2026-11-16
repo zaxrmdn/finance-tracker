@@ -11,6 +11,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - .:/app
+      - ./finance.db:/app/finance.db
     networks:
       - app-net
