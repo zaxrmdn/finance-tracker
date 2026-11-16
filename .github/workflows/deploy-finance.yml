@@ -29,11 +29,11 @@ jobs:
         VPS_USER: ${{ secrets.VPS_USER }}
         VPS_IP: ${{ secrets.VPS_IP }}
       run: |
-        ssh $VPS_USER@$VPS_IP "mkdir -p /opt/vps-stack/finance-app"
+        ssh $VPS_USER@$VPS_IP "mkdir -p /opt/vps-stack/finance-app/public"
         scp -r finance-app/* $VPS_USER@$VPS_IP:/opt/vps-stack/finance-app/
         ssh $VPS_USER@$VPS_IP << 'EOF'
           export PATH=$PATH:/usr/local/bin:/usr/bin:/bin
           cd /opt/vps-stack/finance-app
-          docker compose -f docker-compose.finance.yml build
+          docker compose -f docker-compose.finance.yml build --no-cache
           docker compose -f docker-compose.finance.yml up -d --remove-orphans
         EOF
