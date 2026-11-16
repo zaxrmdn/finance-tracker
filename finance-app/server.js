@@ -6,7 +6,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-// Menyediakan folder 'public' sebagai file statis HTML/CSS/JS
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Inisialisasi Database SQLite
@@ -19,44 +18,62 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// Buat Tabel Transaksi jika belum ada
-db.run(`CREATE TABLE IF NOT EXISTS transactions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL,       -- 'income' atau 'expense'
-  category TEXT NOT NULL,   -- Contoh: Makanan, Transport, Gaji, Bisnis
-  amount REAL NOT NULL,     -- Jumlah uang
-  description TEXT,         -- Catatan tambahan
-  date TEXT DEFAULT CURRENT_TIMESTAMP
-)`);
+// Buat Tabel Users & Transactions
+db.serialize(() => {
+  db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL
+  )`);
 
-// Endpoint: Cek status server
-app.get('/api/status', (req, res) => {
-  res.json({ status: 'API Finance Tracker Berjalan Normal 🚀' });
+  db.run(`CREATE TABLE IF NOT EXISTS transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    type TEXT NOT NULL,       
+    category TEXT NOT NULL,   
+    amount REAL NOT NULL,     
+    description TEXT,         
+    date TEXT DEFAULT CURRENT_TIMESTAMP
+  )`);
+
+  // Masukkan akun default jika belum ada (username: admin, password: password123)
+  db.get(`SELECT * FROM users WHERE username = ?`, ['admin'], (err, row) => {
+    if (!row) {
+      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, ['admin', 'password123']);
+    }
+  });
 });
 
-// Endpoint: Ambil semua transaksi
+// Endpoint: Login Sederhana
+app.post('/api/login', (req, res) => {
+  const { username, password } = req.body;
+  db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
+    if (!row) return res.status(401).json({ error: 'Username atau password salah!' });
+    res.json({ success: true, message: 'Login berhasil', userId: row.id, username: row.username });
+  });
+});
+
+// Endpoint: Ambil Transaksi berdasarkan User
 app.get('/api/transactions', (req, res) => {
-  db.all(`SELECT * FROM transactions ORDER BY id DESC`, [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
+  const userId = req.query.userId || 1;
+  db.all(`SELECT * FROM transactions WHERE userId = ? ORDER BY id DESC`, [userId], (err, rows) => {
+    if (err) return res.status(500).json({ error: err.message });
     res.json({ transactions: rows });
   });
 });
 
-// Endpoint: Tambah transaksi baru
+// Endpoint: Tambah Transaksi
 app.post('/api/transactions', (req, res) => {
-  const { type, category, amount, description } = req.body;
+  const { userId, type, category, amount, description } = req.body;
   if (!type || !category || !amount) {
-    return res.status(400).json({ error: 'Type, category, dan amount wajib diisi!' });
+    return res.status(400).json({ error: 'Data tidak lengkap!' });
   }
 
-  const query = `INSERT INTO transactions (type, category, amount, description) VALUES (?, ?, ?, ?)`;
-  db.run(query, [type, category, amount, description], function(err) {
-    if (err) {
-      return res.status(500).json({ error: err.message });
-    }
-    res.json({ id: this.lastID, message: 'Transaksi berhasil ditambahkan!' });
+  const query = `INSERT INTO transactions (userId, type, category, amount, description) VALUES (?, ?, ?, ?, ?)`;
+  db.run(query, [userId || 1, type, category, amount, description], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ id: this.lastID, message: 'Transaksi berhasil disimpan!' });
   });
 });
 
