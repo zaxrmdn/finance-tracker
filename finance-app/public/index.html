@@ -4,20 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal & Business Finance Tracker</title>
-    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen py-10 px-4">
-    <div class="max-w-4xl mx-auto">
-        <!-- Header -->
+    <!-- HALAMAN LOGIN -->
+    <div id="login-section" class="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-8 mt-20">
+        <h2 class="text-2xl font-bold text-slate-800 mb-2 text-center">🔐 Login Finance Tracker</h2>
+        <p class="text-slate-400 text-xs text-center mb-6">Default: admin / password123</p>
+        <form id="login-form" class="space-y-4">
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Username</label>
+                <input type="text" id="username" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-slate-600 mb-1">Password</label>
+                <input type="password" id="password" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition text-sm">Masuk</button>
+            <p id="login-error" class="text-rose-500 text-xs text-center mt-2 hidden"></p>
+        </form>
+    </div>
+
+    <!-- HALAMAN UTAMA APLIKASI (DISSEMBUNYIKAN SEBELUM LOGIN) -->
+    <div id="app-section" class="max-w-4xl mx-auto hidden">
         <div class="bg-white shadow-md rounded-2xl p-6 mb-6 flex justify-between items-center">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800">💰 Finance Tracker</h1>
-                <p class="text-slate-500 text-sm">Kelola keuangan pribadi & bisnis dalam satu tempat</p>
+                <p class="text-slate-500 text-sm">Selamat datang, <span id="user-display" class="font-semibold text-blue-600"></span></p>
             </div>
-            <div id="total-balance" class="text-right">
-                <span class="text-xs text-slate-400 block">Total Saldo</span>
-                <span class="text-xl font-bold text-emerald-600">Rp 0</span>
+            <div class="flex items-center gap-4">
+                <div id="total-balance" class="text-right">
+                    <span class="text-xs text-slate-400 block">Total Saldo</span>
+                    <span class="text-xl font-bold text-emerald-600">Rp 0</span>
+                </div>
+                <button onclick="logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-1.5 rounded-lg text-xs font-semibold transition">Keluar</button>
             </div>
         </div>
 
@@ -28,22 +48,22 @@
                 <form id="transaction-form" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Tipe</label>
-                        <select id="type" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <select id="type" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="income">Pemasukan (Income)</option>
                             <option value="expense">Pengeluaran (Expense)</option>
                         </select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Kategori</label>
-                        <input type="text" id="category" placeholder="Cth: Gaji, Makanan, Sewa" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="text" id="category" placeholder="Cth: Gaji, Makanan" required class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah (Rp)</label>
-                        <input type="number" id="amount" placeholder="Cth: 50000" required class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <input type="number" id="amount" placeholder="Cth: 50000" required class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan (Opsional)</label>
-                        <input type="text" id="description" placeholder="Cth: Makan siang klien" class="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan</label>
+                        <input type="text" id="description" placeholder="Cth: Makan siang" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition text-sm">Simpan Transaksi</button>
                 </form>
@@ -61,24 +81,75 @@
                                 <th class="py-2 px-2">Jumlah</th>
                             </tr>
                         </thead>
-                        <tbody id="transaction-table-body" class="text-sm text-slate-600 divide-y">
-                            <!-- Data akan dimuat melalui JavaScript -->
-                        </tbody>
+                        <tbody id="transaction-table-body" class="text-sm text-slate-600 divide-y"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Skrip JavaScript Frontend -->
     <script>
-        const form = document.getElementById('transaction-form');
+        let currentUser = localStorage.getItem('userId') || null;
+        let currentUsername = localStorage.getItem('username') || null;
+
+        const loginSection = document.getElementById('login-section');
+        const appSection = document.getElementById('app-section');
+        const loginForm = document.getElementById('login-form');
+        const loginError = document.getElementById('login-error');
+        const transactionForm = document.getElementById('transaction-form');
         const tableBody = document.getElementById('transaction-table-body');
         const totalBalanceEl = document.getElementById('total-balance').querySelector('span:nth-child(2)');
 
+        function checkAuth() {
+            if (currentUser) {
+                loginSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                document.getElementById('user-display').innerText = currentUsername;
+                fetchTransactions();
+            } else {
+                loginSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+            }
+        }
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('userId', data.userId);
+                    localStorage.setItem('username', data.username);
+                    currentUser = data.userId;
+                    currentUsername = data.username;
+                    loginError.classList.add('hidden');
+                    checkAuth();
+                } else {
+                    loginError.innerText = data.error;
+                    loginError.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function logout() {
+            localStorage.clear();
+            currentUser = null;
+            currentUsername = null;
+            checkAuth();
+        }
+
         async function fetchTransactions() {
             try {
-                const res = await fetch('/api/transactions');
+                const res = await fetch(`/api/transactions?userId=${currentUser}`);
                 const data = await res.json();
                 const transactions = data.transactions;
 
@@ -94,12 +165,8 @@
                 transactions.forEach(tx => {
                     const isIncome = tx.type === 'income';
                     const amountFormatted = Number(tx.amount).toLocaleString('id-ID');
-                    
-                    if (isIncome) {
-                        balance += tx.amount;
-                    } else {
-                        balance -= tx.amount;
-                    }
+                    if (isIncome) balance += tx.amount;
+                    else balance -= tx.amount;
 
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -118,11 +185,11 @@
                 totalBalanceEl.innerText = `Rp ${balance.toLocaleString('id-ID')}`;
                 totalBalanceEl.className = `text-xl font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
             } catch (err) {
-                console.error('Gagal mengambil data:', err);
+                console.error('Gagal memuat transaksi:', err);
             }
         }
 
-        form.addEventListener('submit', async (e) => {
+        transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const type = document.getElementById('type').value;
             const category = document.getElementById('category').value;
@@ -133,22 +200,22 @@
                 const res = await fetch('/api/transactions', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ type, category, amount, description })
+                    body: JSON.stringify({ userId: currentUser, type, category, amount, description })
                 });
 
                 if (res.ok) {
-                    form.reset();
+                    transactionForm.reset();
                     fetchTransactions();
                 } else {
                     alert('Gagal menyimpan transaksi.');
                 }
             } catch (err) {
-                console.error('Terjadi kesalahan:', err);
+                console.error(err);
             }
         });
 
-        // Muat data saat halaman dibuka
-        fetchTransactions();
+        // Jalankan saat halaman dimuat
+        checkAuth();
     </script>
 </body>
 </html>
