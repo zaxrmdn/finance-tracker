@@ -1,6 +1,8 @@
+version: '3.8'
+
 networks:
   app-net:
-    name: npm_app-net  
+    name: npm_app-net
     external: true
 
 services:
@@ -11,6 +13,9 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./finance.db:/app/finance.db
+      - finance_data:/app   
     networks:
       - app-net
+
+volumes:
+  finance_data:        
