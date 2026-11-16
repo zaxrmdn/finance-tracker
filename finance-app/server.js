@@ -6,6 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+// Menyediakan folder 'public' sebagai file statis HTML/CSS/JS
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Inisialisasi Database SQLite
 const dbPath = path.resolve(__dirname, 'finance.db');
@@ -20,7 +22,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
 // Buat Tabel Transaksi jika belum ada
 db.run(`CREATE TABLE IF NOT EXISTS transactions (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL,       -- 'income' (pemasukan) atau 'expense' (pengeluaran)
+  type TEXT NOT NULL,       -- 'income' atau 'expense'
   category TEXT NOT NULL,   -- Contoh: Makanan, Transport, Gaji, Bisnis
   amount REAL NOT NULL,     -- Jumlah uang
   description TEXT,         -- Catatan tambahan
@@ -34,7 +36,7 @@ app.get('/api/status', (req, res) => {
 
 // Endpoint: Ambil semua transaksi
 app.get('/api/transactions', (req, res) => {
-  db.all(`SELECT * FROM transactions ORDER BY date DESC`, [], (err, rows) => {
+  db.all(`SELECT * FROM transactions ORDER BY id DESC`, [], (err, rows) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
