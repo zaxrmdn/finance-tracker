@@ -39,30 +39,36 @@ db.serialize(() => {
   )`);
 });
 
-// Endpoint: Registrasi Akun Baru (Aman dengan Bcrypt)
+// Endpoint: Registrasi Akun Baru (Dibatasi Maksimal 1 Akun Saja)
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username dan password wajib diisi!' });
   }
 
-  try {
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
-    db.run(query, [username, hashedPassword], function(err) {
-      if (err) {
-        if (err.message.includes('UNIQUE')) {
-          return res.status(400).json({ error: 'Username sudah digunakan, pilih yang lain.' });
-        }
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ success: true, message: 'Registrasi berhasil! Silakan login.' });
-    });
-  } catch (err) {
-    res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
-  }
-});
+  // Cek jumlah user yang sudah terdaftar di database
+  db.get(`SELECT COUNT(*) as count FROM users`, async (err, row) => {
+    if (err) return res.status(500).json({ error: err.message });
 
+    // Jika sudah ada 1 akun, tolak pendaftaran baru secara permanen
+    if (row.count >= 1) {
+      return res.status(403).json({ error: 'Pendaftaran ditutup! Aplikasi ini dibatasi hanya untuk 1 akun pemilik.' });
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
+      db.run(query, [username, hashedPassword], function(err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+        res.json({ success: true, message: 'Registrasi akun utama berhasil! Silakan login.' });
+      });
+    } catch (err) {
+      res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
+    }
+  });
+});
 // Endpoint: Login Aman
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;

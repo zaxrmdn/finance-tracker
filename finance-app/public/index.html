@@ -25,7 +25,7 @@
             <p id="auth-message" class="text-xs text-center mt-2 hidden"></p>
         </form>
 
-        <div class="mt-6 text-center text-xs text-slate-500">
+        <div id="toggle-container" class="mt-6 text-center text-xs text-slate-500">
             <span id="toggle-text">Belum punya akun?</span>
             <button onclick="toggleAuthMode()" id="toggle-btn" class="text-blue-600 font-semibold ml-1 hover:underline">Daftar di sini</button>
         </div>
@@ -111,8 +111,7 @@
         const authSubtitle = document.getElementById('auth-subtitle');
         const authBtn = document.getElementById('auth-btn');
         const authMessage = document.getElementById('auth-message');
-        const toggleText = document.getElementById('toggle-text');
-        const toggleBtn = document.getElementById('toggle-btn');
+        const toggleContainer = document.getElementById('toggle-container');
 
         const transactionForm = document.getElementById('transaction-form');
         const formTitle = document.getElementById('form-title');
@@ -138,17 +137,15 @@
             isRegisterMode = !isRegisterMode;
             authMessage.classList.add('hidden');
             if (isRegisterMode) {
-                authTitle.innerText = '📝 Daftar Akun Baru';
-                authSubtitle.innerText = 'Buat akun personal Anda sendiri';
+                authTitle.innerText = '📝 Buat Akun Utama';
+                authSubtitle.innerText = 'Pendaftaran dibatasi hanya untuk 1 akun';
                 authBtn.innerText = 'Daftar';
-                toggleText.innerText = 'Sudah punya akun?';
-                toggleBtn.innerText = 'Masuk di sini';
+                toggleContainer.innerHTML = `Sudah punya akun? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold ml-1 hover:underline">Masuk di sini</button>`;
             } else {
                 authTitle.innerText = '🔐 Login Finance Tracker';
                 authSubtitle.innerText = 'Silakan masuk dengan akun Anda';
                 authBtn.innerText = 'Masuk';
-                toggleText.innerText = 'Belum punya akun?';
-                toggleBtn.innerText = 'Daftar di sini';
+                toggleContainer.innerHTML = `Belum punya akun? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold ml-1 hover:underline">Daftar di sini</button>`;
             }
         }
 
@@ -306,7 +303,6 @@
             }
         }
 
-        // Cek autentikasi saat pertama kali dibuka
         checkAuth();
     </script>
 </body>
