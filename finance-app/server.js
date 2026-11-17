@@ -36,15 +36,15 @@ db.serialize(() => {
     date TEXT DEFAULT CURRENT_TIMESTAMP
   )`);
 
-  // Masukkan akun default jika belum ada (username: admin, password: password123)
-  db.get(`SELECT * FROM users WHERE username = ?`, ['admin'], (err, row) => {
+  // Masukkan akun default baru (username: zakaria, password: password123)
+  db.get(`SELECT * FROM users WHERE username = ?`, ['zakaria'], (err, row) => {
     if (!row) {
-      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, ['admin', 'password123']);
+      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, ['zakaria', 'password123']);
     }
   });
 });
 
-// Endpoint: Login Sederhana
+// Endpoint: Login 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
   db.get(`SELECT * FROM users WHERE username = ? AND password = ?`, [username, password], (err, row) => {
@@ -54,7 +54,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 
-// Endpoint: Ambil Transaksi berdasarkan User
+// Endpoint: Ambil Transaksi Berdasarkan User
 app.get('/api/transactions', (req, res) => {
   const userId = req.query.userId || 1;
   db.all(`SELECT * FROM transactions WHERE userId = ? ORDER BY id DESC`, [userId], (err, rows) => {
@@ -74,6 +74,27 @@ app.post('/api/transactions', (req, res) => {
   db.run(query, [userId || 1, type, category, amount, description], function(err) {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ id: this.lastID, message: 'Transaksi berhasil disimpan!' });
+  });
+});
+
+// Endpoint: Edit / Update Transaksi
+app.put('/api/transactions/:id', (req, res) => {
+  const { id } = req.params;
+  const { type, category, amount, description } = req.body;
+  
+  const query = `UPDATE transactions SET type = ?, category = ?, amount = ?, description = ? WHERE id = ?`;
+  db.run(query, [type, category, amount, description, id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Transaksi berhasil diperbarui!' });
+  });
+});
+
+// Endpoint: Hapus Transaksi
+app.delete('/api/transactions/:id', (req, res) => {
+  const { id } = req.params;
+  db.run(`DELETE FROM transactions WHERE id = ?`, [id], function(err) {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Transaksi berhasil dihapus!' });
   });
 });
 
