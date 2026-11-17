@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Inisialisasi Database SQLite
 const dbPath = path.resolve(__dirname, 'finance.db');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
@@ -19,7 +18,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
   }
 });
 
-// Buat Tabel Users & Transactions
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,29 +37,23 @@ db.serialize(() => {
   )`);
 });
 
-// Endpoint: Registrasi Akun Baru (Dibatasi Maksimal 1 Akun Saja)
+// Register (Dibatasi Maksimal 1 Akun)
 app.post('/api/register', async (req, res) => {
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Username dan password wajib diisi!' });
   }
 
-  // Cek jumlah user yang sudah terdaftar di database
   db.get(`SELECT COUNT(*) as count FROM users`, async (err, row) => {
     if (err) return res.status(500).json({ error: err.message });
-
-    // Jika sudah ada 1 akun, tolak pendaftaran baru secara permanen
     if (row.count >= 1) {
       return res.status(403).json({ error: 'Pendaftaran ditutup! Aplikasi ini dibatasi hanya untuk 1 akun pemilik.' });
     }
 
     try {
       const hashedPassword = await bcrypt.hash(password, 10);
-      const query = `INSERT INTO users (username, password) VALUES (?, ?)`;
-      db.run(query, [username, hashedPassword], function(err) {
-        if (err) {
-          return res.status(500).json({ error: err.message });
-        }
+      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
         res.json({ success: true, message: 'Registrasi akun utama berhasil! Silakan login.' });
       });
     } catch (err) {
@@ -69,13 +61,10 @@ app.post('/api/register', async (req, res) => {
     }
   });
 });
-// Endpoint: Login Aman
+
+// Login
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username dan password wajib diisi!' });
-  }
-
   db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
     if (err) return res.status(500).json({ error: err.message });
     if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
@@ -83,27 +72,22 @@ app.post('/api/login', (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: 'Username atau password salah!' });
 
-    res.json({ 
-      success: true, 
-      message: 'Login berhasil', 
-      userId: user.id, 
-      username: user.username 
-    });
+    res.json({ success: true, message: 'Login berhasil', userId: user.id, username: user.username });
   });
 });
 
-// Endpoint: Ambil Transaksi Berdasarkan User yang Login
+// Ambil Transaksi
 app.get('/api/transactions', (req, res) => {
   const userId = req.query.userId;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
 
-  db.all(`SELECT * FROM transactions WHERE userId = ? ORDER BY id DESC`, [userId], (err, rows) => {
+  db.all(`SELECT * FROM transactions WHERE userId = ? ORDER BY date DESC, id DESC`, [userId], (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
     res.json({ transactions: rows });
   });
 });
 
-// Endpoint: Tambah Transaksi
+// Tambah Transaksi
 app.post('/api/transactions', (req, res) => {
   const { userId, type, category, amount, description } = req.body;
   if (!userId || !type || !category || !amount) {
@@ -117,11 +101,10 @@ app.post('/api/transactions', (req, res) => {
   });
 });
 
-// Endpoint: Edit / Update Transaksi
+// Edit Transaksi
 app.put('/api/transactions/:id', (req, res) => {
   const { id } = req.params;
   const { type, category, amount, description } = req.body;
-  
   const query = `UPDATE transactions SET type = ?, category = ?, amount = ?, description = ? WHERE id = ?`;
   db.run(query, [type, category, amount, description, id], function(err) {
     if (err) return res.status(500).json({ error: err.message });
@@ -129,7 +112,7 @@ app.put('/api/transactions/:id', (req, res) => {
   });
 });
 
-// Endpoint: Hapus Transaksi
+// Hapus Transaksi
 app.delete('/api/transactions/:id', (req, res) => {
   const { id } = req.params;
   db.run(`DELETE FROM transactions WHERE id = ?`, [id], function(err) {
