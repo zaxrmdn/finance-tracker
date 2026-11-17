@@ -30,7 +30,7 @@ Aplikasi ini dibangun dengan fokus pada keamanan data, arsitektur kontainerisasi
 ## ⚙️ Panduan Instalasi & Menjalankan (Lokal / VPS)
 
 1. **Clone Repositori**
-   ```bash
+   ```Bash
    git clone [https://github.com/username-anda/nama-repositori.git](https://github.com/username-anda/nama-repositori.git)
    cd nama-repositori/finance-app
    ```
@@ -38,9 +38,9 @@ Aplikasi ini dibangun dengan fokus pada keamanan data, arsitektur kontainerisasi
 2. **Jalankan Menggunakan Docker Compose**
 Pastikan Anda sudah menginstal Docker dan Docker Compose di server atau komputer lokal Anda, lalu jalankan:
 
-```Bash
-docker compose -f docker-compose.finance.yml up --build -d
-```
+   ```Bash
+   docker compose -f docker-compose.finance.yml up --build -d
+   ```
 3. **Akses Aplikasi**
 Buka browser dan akses http://localhost:3000 (atau melalui domain VPS yang terhubung ke Nginx Proxy Manager).
 
