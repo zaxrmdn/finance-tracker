@@ -35,13 +35,13 @@ Aplikasi ini dibangun dengan fokus pada keamanan data, arsitektur kontainerisasi
    cd nama-repositori/finance-app
    ```
    
-Jalankan Menggunakan Docker Compose
+2. **Jalankan Menggunakan Docker Compose**
 Pastikan Anda sudah menginstal Docker dan Docker Compose di server atau komputer lokal Anda, lalu jalankan:
 
 ```Bash
 docker compose -f docker-compose.finance.yml up --build -d
 ```
-Akses Aplikasi
+3. **Akses Aplikasi**
 Buka browser dan akses http://localhost:3000 (atau melalui domain VPS yang terhubung ke Nginx Proxy Manager).
 
 👨‍💻 Author & Maintainer
