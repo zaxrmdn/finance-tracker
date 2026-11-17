@@ -134,3 +134,4 @@ app.delete('/api/transactions/:id', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Server berjalan di port ${PORT}`);
+});
