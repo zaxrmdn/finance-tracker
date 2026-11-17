@@ -7,11 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen py-10 px-4">
-    <!-- HALAMAN LOGIN -->
-    <div id="login-section" class="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-8 mt-20">
-        <h2 class="text-2xl font-bold text-slate-800 mb-2 text-center">🔐 Login Finance Tracker</h2>
-        <p class="text-slate-400 text-xs text-center mb-6">Akun default: <b>zakaria</b> / <b>password123</b></p>
-        <form id="login-form" class="space-y-4">
+    <!-- HALAMAN OTENTIKASI (LOGIN / REGISTER) -->
+    <div id="auth-section" class="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-8 mt-16">
+        <h2 id="auth-title" class="text-2xl font-bold text-slate-800 mb-2 text-center">🔐 Login Finance Tracker</h2>
+        <p id="auth-subtitle" class="text-slate-400 text-xs text-center mb-6">Silakan masuk dengan akun Anda</p>
+        
+        <form id="auth-form" class="space-y-4">
             <div>
                 <label class="block text-xs font-medium text-slate-600 mb-1">Username</label>
                 <input type="text" id="username" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
@@ -20,12 +21,17 @@
                 <label class="block text-xs font-medium text-slate-600 mb-1">Password</label>
                 <input type="password" id="password" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition text-sm">Masuk</button>
-            <p id="login-error" class="text-rose-500 text-xs text-center mt-2 hidden"></p>
+            <button type="submit" id="auth-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition text-sm">Masuk</button>
+            <p id="auth-message" class="text-xs text-center mt-2 hidden"></p>
         </form>
+
+        <div class="mt-6 text-center text-xs text-slate-500">
+            <span id="toggle-text">Belum punya akun?</span>
+            <button onclick="toggleAuthMode()" id="toggle-btn" class="text-blue-600 font-semibold ml-1 hover:underline">Daftar di sini</button>
+        </div>
     </div>
 
-    <!-- HALAMAN UTAMA APLIKASI (DISSEMBUNYIKAN SEBELUM LOGIN) -->
+    <!-- HALAMAN UTAMA APLIKASI -->
     <div id="app-section" class="max-w-4xl mx-auto hidden">
         <div class="bg-white shadow-md rounded-2xl p-6 mb-6 flex justify-between items-center">
             <div>
@@ -96,13 +102,19 @@
     <script>
         let currentUser = localStorage.getItem('userId') || null;
         let currentUsername = localStorage.getItem('username') || null;
+        let isRegisterMode = false;
 
-        const loginSection = document.getElementById('login-section');
+        const authSection = document.getElementById('auth-section');
         const appSection = document.getElementById('app-section');
-        const loginForm = document.getElementById('login-form');
-        const loginError = document.getElementById('login-error');
-        
-        const form = document.getElementById('transaction-form');
+        const authForm = document.getElementById('auth-form');
+        const authTitle = document.getElementById('auth-title');
+        const authSubtitle = document.getElementById('auth-subtitle');
+        const authBtn = document.getElementById('auth-btn');
+        const authMessage = document.getElementById('auth-message');
+        const toggleText = document.getElementById('toggle-text');
+        const toggleBtn = document.getElementById('toggle-btn');
+
+        const transactionForm = document.getElementById('transaction-form');
         const formTitle = document.getElementById('form-title');
         const submitBtn = document.getElementById('submit-btn');
         const cancelEditBtn = document.getElementById('cancel-edit');
@@ -112,38 +124,64 @@
 
         function checkAuth() {
             if (currentUser) {
-                loginSection.classList.add('hidden');
+                authSection.classList.add('hidden');
                 appSection.classList.remove('hidden');
                 document.getElementById('user-display').innerText = currentUsername;
                 fetchTransactions();
             } else {
-                loginSection.classList.remove('hidden');
+                authSection.classList.remove('hidden');
                 appSection.classList.add('hidden');
             }
         }
 
-        loginForm.addEventListener('submit', async (e) => {
+        function toggleAuthMode() {
+            isRegisterMode = !isRegisterMode;
+            authMessage.classList.add('hidden');
+            if (isRegisterMode) {
+                authTitle.innerText = '📝 Daftar Akun Baru';
+                authSubtitle.innerText = 'Buat akun personal Anda sendiri';
+                authBtn.innerText = 'Daftar';
+                toggleText.innerText = 'Sudah punya akun?';
+                toggleBtn.innerText = 'Masuk di sini';
+            } else {
+                authTitle.innerText = '🔐 Login Finance Tracker';
+                authSubtitle.innerText = 'Silakan masuk dengan akun Anda';
+                authBtn.innerText = 'Masuk';
+                toggleText.innerText = 'Belum punya akun?';
+                toggleBtn.innerText = 'Daftar di sini';
+            }
+        }
+
+        authForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
+            const endpoint = isRegisterMode ? '/api/register' : '/api/login';
 
             try {
-                const res = await fetch('/api/login', {
+                const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
                 });
                 const data = await res.json();
+                
                 if (res.ok) {
-                    localStorage.setItem('userId', data.userId);
-                    localStorage.setItem('username', data.username);
-                    currentUser = data.userId;
-                    currentUsername = data.username;
-                    loginError.classList.add('hidden');
-                    checkAuth();
+                    if (isRegisterMode) {
+                        alert(data.message);
+                        toggleAuthMode();
+                        authForm.reset();
+                    } else {
+                        localStorage.setItem('userId', data.userId);
+                        localStorage.setItem('username', data.username);
+                        currentUser = data.userId;
+                        currentUsername = data.username;
+                        checkAuth();
+                    }
                 } else {
-                    loginError.innerText = data.error;
-                    loginError.classList.remove('hidden');
+                    authMessage.innerText = data.error;
+                    authMessage.className = 'text-rose-500 text-xs text-center mt-2';
+                    authMessage.classList.remove('hidden');
                 }
             } catch (err) {
                 console.error(err);
@@ -203,7 +241,7 @@
             }
         }
 
-        form.addEventListener('submit', async (e) => {
+        transactionForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = editIdInput.value;
             const type = document.getElementById('type').value;
@@ -246,7 +284,7 @@
         }
 
         function resetForm() {
-            form.reset();
+            transactionForm.reset();
             editIdInput.value = '';
             formTitle.innerText = 'Tambah Transaksi';
             submitBtn.innerText = 'Simpan';
