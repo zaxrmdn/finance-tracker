@@ -113,3 +113,4 @@ app.delete('/api/transactions/:id', isAuthenticated, (req, res) => {
 
 app.listen(PORT, () => {
     console.log(`Server berjalan di port ${PORT}`);
+});
