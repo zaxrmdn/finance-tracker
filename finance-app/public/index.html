@@ -3,17 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Personal & Business Finance Tracker</title>
+    <title>Finance Tracker - Tabungan & Hutang</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js untuk Grafik Visualisasi -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 font-sans">
 
-    <!-- Container Utama -->
-    <div id="app" class="max-w-5xl mx-auto p-4 md:p-8">
+    <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
         
-        <!-- Bagian Login (Tampil jika belum login) -->
+        <!-- Bagian Login -->
         <div id="login-section" class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md mt-10">
             <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">Login Keuangan</h2>
             <form id="login-form" class="space-y-4">
@@ -30,14 +28,14 @@
             <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden"></p>
         </div>
 
-        <!-- Bagian Dashboard (Tampil setelah login) -->
+        <!-- Bagian Dashboard Utama -->
         <div id="dashboard-section" class="hidden space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-                <h1 class="text-xl font-bold text-gray-700">💰 Financial Dashboard</h1>
+                <h1 class="text-xl font-bold text-gray-700">💰 Financial Dashboard & Goals</h1>
                 <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600">Logout</button>
             </div>
 
-            <!-- Filter Bulan & Ekspor CSV -->
+            <!-- Filter & Ekspor -->
             <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
                 <div class="flex items-center gap-2">
                     <label class="text-sm font-medium">Filter Bulan:</label>
@@ -49,9 +47,8 @@
 
             <!-- Ringkasan Saldo & Grafik -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Kartu Informasi Saldo -->
                 <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
-                    <h3 class="font-bold text-lg text-gray-700">Ringkasan Finansial</h3>
+                    <h3 class="font-bold text-lg text-gray-700">Ringkasan Saldo</h3>
                     <div class="grid grid-cols-3 gap-2 text-center">
                         <div class="bg-green-50 p-3 rounded-lg">
                             <p class="text-xs text-green-600 font-semibold">Pemasukan</p>
@@ -69,7 +66,7 @@
 
                     <!-- Form Tambah Transaksi -->
                     <form id="transaction-form" class="space-y-3 pt-4 border-t">
-                        <h4 class="font-semibold text-sm text-gray-600">Tambah Transaksi Baru</h4>
+                        <h4 class="font-semibold text-sm text-gray-600">Tambah Transaksi</h4>
                         <div class="grid grid-cols-2 gap-2">
                             <select id="tx-type" class="border rounded-lg p-2 text-sm">
                                 <option value="income">Pemasukan</option>
@@ -81,11 +78,11 @@
                             </select>
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="tx-category" placeholder="Kategori (cth: Makanan)" required class="border rounded-lg p-2 text-sm">
+                            <input type="text" id="tx-category" placeholder="Kategori" required class="border rounded-lg p-2 text-sm">
                             <input type="number" id="tx-amount" placeholder="Nominal (Rp)" required class="border rounded-lg p-2 text-sm">
                         </div>
                         <div class="grid grid-cols-2 gap-2">
-                            <input type="text" id="tx-desc" placeholder="Deskripsi (Opsional)" class="border rounded-lg p-2 text-sm">
+                            <input type="text" id="tx-desc" placeholder="Deskripsi" class="border rounded-lg p-2 text-sm">
                             <input type="date" id="tx-date" required class="border rounded-lg p-2 text-sm">
                         </div>
                         <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan Transaksi</button>
@@ -94,11 +91,50 @@
 
                 <!-- Grafik Chart.js -->
                 <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col justify-center items-center">
-                    <h3 class="font-bold text-lg text-gray-700 mb-2">Grafik Pengeluaran per Kategori</h3>
+                    <h3 class="font-bold text-lg text-gray-700 mb-2">Grafik Pengeluaran</h3>
                     <div class="w-full max-w-xs h-64">
                         <canvas id="expenseChart"></canvas>
                     </div>
                 </div>
+            </div>
+
+            <!-- FITUR TABUNGAN & HUTANG -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Panel Tabungan -->
+                <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+                    <h3 class="font-bold text-lg text-gray-700">🎯 Target Tabungan (Saving Goals)</h3>
+                    <form id="saving-form" class="space-y-2">
+                        <input type="text" id="sav-title" placeholder="Nama Target (Cth: Beli Laptop)" required class="w-full border rounded-lg p-2 text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" id="sav-target" placeholder="Target Nominal (Rp)" required class="border rounded-lg p-2 text-sm">
+                            <input type="date" id="sav-deadline" class="border rounded-lg p-2 text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-indigo-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-indigo-700">Tambah Target</button>
+                    </form>
+                    <div id="savings-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+                </div>
+
+                <!-- Panel Hutang & Piutang -->
+                <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+                    <h3 class="font-bold text-lg text-gray-700">🤝 Catatan Hutang & Piutang</h3>
+                    <form id="debt-form" class="space-y-2">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="debt-name" placeholder="Nama Orang" required class="border rounded-lg p-2 text-sm">
+                            <select id="debt-type" class="border rounded-lg p-2 text-sm">
+                                <option value="piutang">Piutang (Dipinjam Orang)</option>
+                                <option value="hutang">Hutang (Anda Meminjam)</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" id="debt-amount" placeholder="Nominal (Rp)" required class="border rounded-lg p-2 text-sm">
+                            <input type="date" id="debt-due" class="border rounded-lg p-2 text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-amber-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-amber-700">Simpan Catatan</button>
+                    </form>
+                    <div id="debts-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
+                </div>
+
             </div>
 
             <!-- Tabel Riwayat Transaksi -->
@@ -115,21 +151,24 @@
                             <th class="p-3 text-center">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody id="transaction-table-body" class="text-sm">
-                        <!-- Data dimasukkan via Javascript -->
-                    </tbody>
+                    <tbody id="transaction-table-body" class="text-sm"></tbody>
                 </table>
             </div>
         </div>
 
     </div>
 
-    <!-- Script Logika Frontend & Chart -->
+    <!-- Script Utama Frontend -->
     <script>
         let transactionsData = [];
         let expenseChart = null;
 
-        // Cek Status Login saat halaman dimuat
+        async function loadAllData() {
+            await fetchTransactions();
+            await fetchSavings();
+            await fetchDebts();
+        }
+
         async function fetchTransactions() {
             const month = document.getElementById('filter-month').value;
             let url = '/api/transactions';
@@ -141,21 +180,17 @@
                 document.getElementById('dashboard-section').classList.add('hidden');
                 return;
             }
-            
             transactionsData = await res.json();
             document.getElementById('login-section').classList.add('hidden');
             document.getElementById('dashboard-section').classList.remove('hidden');
-            
-            renderDashboard();
+            renderTransactions();
         }
 
-        // Render Data ke UI dan Chart
-        function renderDashboard() {
+        function renderTransactions() {
             let totalIncome = 0;
             let totalExpense = 0;
             const tbody = document.getElementById('transaction-table-body');
             tbody.innerHTML = '';
-
             let categoryMap = {};
 
             transactionsData.forEach(tx => {
@@ -189,14 +224,178 @@
             updateChart(categoryMap);
         }
 
-        // Update Grafik Chart.js
+        async function fetchSavings() {
+            const res = await fetch('/api/savings');
+            const savings = await res.json();
+            const listEl = document.getElementById('savings-list');
+            listEl.innerHTML = '';
+
+            savings.forEach(sav => {
+                const percent = Math.min(100, Math.round((sav.current_amount / sav.target_amount) * 100));
+                const div = document.createElement('div');
+                div.className = 'p-3 border rounded-lg bg-gray-50 space-y-1';
+                div.innerHTML = `
+                    <div class="flex justify-between text-sm font-semibold">
+                        <span>${sav.title}</span>
+                        <span>Rp ${sav.current_amount.toLocaleString('id-ID')} / ${sav.target_amount.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-indigo-600 h-2.5 rounded-full" style="width: ${percent}%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-gray-500 pt-1">
+                        <span>Progres: ${percent}%</span>
+                        <div class="space-x-1">
+                            <button onclick="depositSaving(${sav.id})" class="bg-green-100 text-green-700 px-2 py-1 rounded">Setor</button>
+                            <button onclick="deleteSaving(${sav.id})" class="bg-red-100 text-red-700 px-2 py-1 rounded">Hapus</button>
+                        </div>
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        async function fetchDebts() {
+            const res = await fetch('/api/debts');
+            const debts = await res.json();
+            const listEl = document.getElementById('debts-list');
+            listEl.innerHTML = '';
+
+            debts.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'p-3 border rounded-lg bg-gray-50 flex justify-between items-center text-sm';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${d.person_name} <span class="text-xs px-2 py-0.5 rounded ${d.type === 'piutang' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}">${d.type.toUpperCase()}</span></p>
+                        <p class="text-xs text-gray-500">Rp ${d.amount.toLocaleString('id-ID')} - <span class="${d.status === 'Lunas' ? 'text-green-600 font-semibold' : 'text-red-500'}">${d.status}</span></p>
+                    </div>
+                    <div class="space-x-1">
+                        ${d.status !== 'Lunas' ? `<button onclick="payDebt(${d.id})" class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Lunasi</button>` : ''}
+                        <button onclick="deleteDebt(${d.id})" class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Hapus</button>
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
+        // Form Event Listeners
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: document.getElementById('username').value,
+                    password: document.getElementById('password').value
+                })
+            });
+            if (res.ok) loadAllData();
+            else {
+                const err = await res.json();
+                const errEl = document.getElementById('login-error');
+                errEl.innerText = err.error;
+                errEl.classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            loadAllData();
+        });
+
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    type: document.getElementById('tx-type').value,
+                    scope: document.getElementById('tx-scope').value,
+                    category: document.getElementById('tx-category').value,
+                    amount: parseFloat(document.getElementById('tx-amount').value),
+                    description: document.getElementById('tx-desc').value,
+                    date: document.getElementById('tx-date').value
+                })
+            });
+            e.target.reset();
+            document.getElementById('tx-date').valueAsDate = new Date();
+            loadAllData();
+        });
+
+        document.getElementById('saving-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/savings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: document.getElementById('sav-title').value,
+                    target_amount: parseFloat(document.getElementById('sav-target').value),
+                    deadline: document.getElementById('sav-deadline').value
+                })
+            });
+            e.target.reset();
+            fetchSavings();
+        });
+
+        async function depositSaving(id) {
+            const amt = prompt('Masukkan jumlah setoran tabungan (Rp):');
+            if (amt && !isNaN(amt)) {
+                await fetch(`/api/savings/${id}/deposit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: parseFloat(amt) })
+                });
+                fetchSavings();
+            }
+        }
+
+        async function deleteSaving(id) {
+            if (confirm('Hapus target tabungan ini?')) {
+                await fetch(`/api/savings/${id}`, { method: 'DELETE' });
+                fetchSavings();
+            }
+        }
+
+        document.getElementById('debt-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await fetch('/api/debts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    person_name: document.getElementById('debt-name').value,
+                    type: document.getElementById('debt-type').value,
+                    amount: parseFloat(document.getElementById('debt-amount').value),
+                    due_date: document.getElementById('debt-due').value
+                })
+            });
+            e.target.reset();
+            fetchDebts();
+        });
+
+        async function payDebt(id) {
+            await fetch(`/api/debts/${id}/pay`, { method: 'POST' });
+            fetchDebts();
+        }
+
+        async function deleteDebt(id) {
+            if (confirm('Hapus catatan hutang ini?')) {
+                await fetch(`/api/debts/${id}`, { method: 'DELETE' });
+                fetchDebts();
+            }
+        }
+
+        async function deleteTransaction(id) {
+            if (confirm('Hapus transaksi ini?')) {
+                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                loadAllData();
+            }
+        }
+
         function updateChart(categoryMap) {
             const ctx = document.getElementById('expenseChart').getContext('2d');
             const labels = Object.keys(categoryMap);
             const data = Object.values(categoryMap);
 
             if (expenseChart) expenseChart.destroy();
-
             expenseChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
@@ -206,106 +405,32 @@
                         backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#8b5cf6', '#ec4899']
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
         }
 
-        // Login Handler
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
-            });
-
-            if (res.ok) {
-                fetchTransactions();
-            } else {
-                const err = await res.json();
-                const errEl = document.getElementById('login-error');
-                errEl.innerText = err.error;
-                errEl.classList.remove('hidden');
-            }
-        });
-
-        // Logout Handler
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await fetch('/api/logout', { method: 'POST' });
-            fetchTransactions();
-        });
-
-        // Tambah Transaksi Handler
-        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const body = {
-                type: document.getElementById('tx-type').value,
-                scope: document.getElementById('tx-scope').value,
-                category: document.getElementById('tx-category').value,
-                amount: parseFloat(document.getElementById('tx-amount').value),
-                description: document.getElementById('tx-desc').value,
-                date: document.getElementById('tx-date').value
-            };
-
-            const res = await fetch('/api/transactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if (res.ok) {
-                document.getElementById('transaction-form').reset();
-                document.getElementById('tx-date').valueAsDate = new Date();
-                fetchTransactions();
-            }
-        });
-
-        // Hapus Transaksi
-        async function deleteTransaction(id) {
-            if (confirm('Yakin ingin menghapus transaksi ini?')) {
-                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-                fetchTransactions();
-            }
-        }
-
-        // Filter Bulan & Reset
         document.getElementById('filter-month').addEventListener('change', fetchTransactions);
         document.getElementById('reset-filter').addEventListener('click', () => {
             document.getElementById('filter-month').value = '';
             fetchTransactions();
         });
 
-        // Ekspor CSV Handler
         document.getElementById('export-csv').addEventListener('click', () => {
-            if (transactionsData.length === 0) {
-                alert('Tidak ada data untuk diekspor.');
-                return;
-            }
-
+            if (transactionsData.length === 0) return alert('Tidak ada data.');
             let csvContent = "data:text/csv;charset=utf-8,Tanggal,Lingkup,Kategori,Tipe,Nominal,Deskripsi\r\n";
             transactionsData.forEach(tx => {
-                let row = [tx.date, tx.scope, tx.category, tx.type, tx.amount, `"${tx.description || ''}"`].join(",");
-                csvContent += row + "\r\n";
+                csvContent += [tx.date, tx.scope, tx.category, tx.type, tx.amount, `"${tx.description || ''}"`].join(",") + "\r\n";
             });
-
-            const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", `laporan_keuangan_${document.getElementById('filter-month').value || 'semua'}.csv`);
+            link.setAttribute("href", encodeURI(csvContent));
+            link.setAttribute("download", `laporan_keuangan.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
         });
 
-        // Set tanggal default ke hari ini
         document.getElementById('tx-date').valueAsDate = new Date();
-        fetchTransactions();
+        loadAllData();
     </script>
 </body>
 </html>
