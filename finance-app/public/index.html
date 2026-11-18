@@ -5,306 +5,205 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal & Business Finance Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js CDN untuk Grafik Visualisasi -->
+    <!-- Chart.js untuk Grafik Visualisasi -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-slate-100 min-h-screen py-10 px-4">
-    <!-- HALAMAN OTENTIKASI -->
-    <div id="auth-section" class="max-w-md mx-auto bg-white shadow-lg rounded-2xl p-8 mt-16">
-        <h2 id="auth-title" class="text-2xl font-bold text-slate-800 mb-2 text-center">🔐 Login Finance Tracker</h2>
-        <p id="auth-subtitle" class="text-slate-400 text-xs text-center mb-6">Silakan masuk dengan akun Anda</p>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+    <!-- Container Utama -->
+    <div id="app" class="max-w-5xl mx-auto p-4 md:p-8">
         
-        <form id="auth-form" class="space-y-4">
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Username</label>
-                <input type="text" id="username" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <div>
-                <label class="block text-xs font-medium text-slate-600 mb-1">Password</label>
-                <input type="password" id="password" required class="w-full border border-slate-300 rounded-lg p-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-            </div>
-            <button type="submit" id="auth-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-lg transition text-sm">Masuk</button>
-            <p id="auth-message" class="text-xs text-center mt-2 hidden"></p>
-        </form>
-
-        <div id="toggle-container" class="mt-6 text-center text-xs text-slate-500">
-            <span>Belum punya akun?</span>
-            <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold ml-1 hover:underline">Daftar di sini</button>
+        <!-- Bagian Login (Tampil jika belum login) -->
+        <div id="login-section" class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md mt-10">
+            <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">Login Keuangan</h2>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Username</label>
+                    <input type="text" id="username" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Password</label>
+                    <input type="password" id="password" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg font-semibold hover:bg-blue-700">Masuk</button>
+            </form>
+            <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden"></p>
         </div>
+
+        <!-- Bagian Dashboard (Tampil setelah login) -->
+        <div id="dashboard-section" class="hidden space-y-6">
+            <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
+                <h1 class="text-xl font-bold text-gray-700">💰 Financial Dashboard</h1>
+                <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600">Logout</button>
+            </div>
+
+            <!-- Filter Bulan & Ekspor CSV -->
+            <div class="bg-white p-4 rounded-xl shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+                <div class="flex items-center gap-2">
+                    <label class="text-sm font-medium">Filter Bulan:</label>
+                    <input type="month" id="filter-month" class="border rounded-lg p-2 text-sm">
+                    <button id="reset-filter" class="bg-gray-200 px-3 py-2 rounded-lg text-sm hover:bg-gray-300">Reset</button>
+                </div>
+                <button id="export-csv" class="bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 font-medium">📥 Unduh Laporan CSV</button>
+            </div>
+
+            <!-- Ringkasan Saldo & Grafik -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Kartu Informasi Saldo -->
+                <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
+                    <h3 class="font-bold text-lg text-gray-700">Ringkasan Finansial</h3>
+                    <div class="grid grid-cols-3 gap-2 text-center">
+                        <div class="bg-green-50 p-3 rounded-lg">
+                            <p class="text-xs text-green-600 font-semibold">Pemasukan</p>
+                            <p id="total-income" class="text-lg font-bold text-green-700">Rp 0</p>
+                        </div>
+                        <div class="bg-red-50 p-3 rounded-lg">
+                            <p class="text-xs text-red-600 font-semibold">Pengeluaran</p>
+                            <p id="total-expense" class="text-lg font-bold text-red-700">Rp 0</p>
+                        </div>
+                        <div class="bg-blue-50 p-3 rounded-lg">
+                            <p class="text-xs text-blue-600 font-semibold">Sisa Saldo</p>
+                            <p id="total-balance" class="text-lg font-bold text-blue-700">Rp 0</p>
+                        </div>
+                    </div>
+
+                    <!-- Form Tambah Transaksi -->
+                    <form id="transaction-form" class="space-y-3 pt-4 border-t">
+                        <h4 class="font-semibold text-sm text-gray-600">Tambah Transaksi Baru</h4>
+                        <div class="grid grid-cols-2 gap-2">
+                            <select id="tx-type" class="border rounded-lg p-2 text-sm">
+                                <option value="income">Pemasukan</option>
+                                <option value="expense" selected>Pengeluaran</option>
+                            </select>
+                            <select id="tx-scope" class="border rounded-lg p-2 text-sm">
+                                <option value="Pribadi">Pribadi</option>
+                                <option value="Bisnis">Bisnis</option>
+                            </select>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="tx-category" placeholder="Kategori (cth: Makanan)" required class="border rounded-lg p-2 text-sm">
+                            <input type="number" id="tx-amount" placeholder="Nominal (Rp)" required class="border rounded-lg p-2 text-sm">
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="tx-desc" placeholder="Deskripsi (Opsional)" class="border rounded-lg p-2 text-sm">
+                            <input type="date" id="tx-date" required class="border rounded-lg p-2 text-sm">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan Transaksi</button>
+                    </form>
+                </div>
+
+                <!-- Grafik Chart.js -->
+                <div class="bg-white p-6 rounded-xl shadow-sm flex flex-col justify-center items-center">
+                    <h3 class="font-bold text-lg text-gray-700 mb-2">Grafik Pengeluaran per Kategori</h3>
+                    <div class="w-full max-w-xs h-64">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabel Riwayat Transaksi -->
+            <div class="bg-white p-6 rounded-xl shadow-sm overflow-x-auto">
+                <h3 class="font-bold text-lg text-gray-700 mb-4">Riwayat Transaksi</h3>
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b bg-gray-50 text-sm text-gray-600">
+                            <th class="p-3">Tanggal</th>
+                            <th class="p-3">Lingkup</th>
+                            <th class="p-3">Kategori</th>
+                            <th class="p-3">Deskripsi</th>
+                            <th class="p-3">Nominal</th>
+                            <th class="p-3 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transaction-table-body" class="text-sm">
+                        <!-- Data dimasukkan via Javascript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <!-- HALAMAN UTAMA APLIKASI -->
-    <div id="app-section" class="max-w-5xl mx-auto hidden space-y-6">
-        <!-- Header -->
-        <div class="bg-white shadow-md rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">💰 Finance & Business Tracker</h1>
-                <p class="text-slate-500 text-sm">Halo, <span id="user-display" class="font-semibold text-blue-600"></span></p>
-            </div>
-            <div class="flex items-center gap-4">
-                <div id="total-balance" class="text-right">
-                    <span class="text-xs text-slate-400 block">Total Saldo</span>
-                    <span class="text-xl font-bold text-emerald-600">Rp 0</span>
-                </div>
-                <button onclick="exportToCSV()" class="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-semibold transition">📥 Unduh CSV</button>
-                <button onclick="logout()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 px-3 py-2 rounded-lg text-xs font-semibold transition">Keluar</button>
-            </div>
-        </div>
-
-        <!-- Baris Grid Utama -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Form Tambah / Edit Transaksi -->
-            <div class="bg-white shadow-md rounded-2xl p-6 md:col-span-1 h-fit">
-                <h2 id="form-title" class="text-lg font-semibold text-slate-700 mb-4">Tambah Transaksi</h2>
-                <form id="transaction-form" class="space-y-4">
-                    <input type="hidden" id="edit-id">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Tipe</label>
-                        <select id="type" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="income">Pemasukan (Income)</option>
-                            <option value="expense">Pengeluaran (Expense)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Kategori (Sektor)</label>
-                        <select id="category" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                            <option value="Pribadi - Gaji">Pribadi - Gaji</option>
-                            <option value="Pribadi - Makanan">Pribadi - Makanan</option>
-                            <option value="Pribadi - Hiburan">Pribadi - Hiburan</option>
-                            <option value="Bisnis - Penjualan">Bisnis - Penjualan</option>
-                            <option value="Bisnis - Operasional">Bisnis - Operasional</option>
-                            <option value="Lainnya">Lainnya</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Jumlah (Rp)</label>
-                        <input type="number" id="amount" placeholder="Cth: 50000" required class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-600 mb-1">Keterangan</label>
-                        <input type="text" id="description" placeholder="Cth: Klien A / Makan siang" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div class="flex gap-2">
-                        <button type="submit" id="submit-btn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition text-sm">Simpan</button>
-                        <button type="button" id="cancel-edit" onclick="resetForm()" class="hidden bg-slate-200 hover:bg-slate-300 text-slate-700 px-3 py-2 rounded-lg text-sm transition">Batal</button>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Tabel & Grafik Analitik -->
-            <div class="bg-white shadow-md rounded-2xl p-6 md:col-span-2 space-y-6">
-                <!-- Visualisasi Grafik -->
-                <div>
-                    <h2 class="text-lg font-semibold text-slate-700 mb-2">📊 Grafik Keuangan</h2>
-                    <div class="w-full h-48 flex justify-center items-center">
-                        <canvas id="financeChart"></canvas>
-                    </div>
-                </div>
-
-                <!-- Riwayat Transaksi -->
-                <div>
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-lg font-semibold text-slate-700">Riwayat Transaksi</h2>
-                        <input type="month" id="filter-month" onchange="fetchTransactions()" class="border border-slate-300 rounded-lg p-1.5 text-xs outline-none">
-                    </div>
-                    <div class="overflow-x-auto max-h-[300px] overflow-y-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="border-b text-xs text-slate-400 uppercase">
-                                    <th class="py-2 px-2">Tanggal / Kategori</th>
-                                    <th class="py-2 px-2">Keterangan</th>
-                                    <th class="py-2 px-2">Jumlah</th>
-                                    <th class="py-2 px-2 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="transaction-table-body" class="text-sm text-slate-600 divide-y"></tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- Script Logika Frontend & Chart -->
     <script>
-        let currentUser = localStorage.getItem('userId') || null;
-        let currentUsername = localStorage.getItem('username') || null;
-        let isRegisterMode = false;
-        let allTransactions = [];
-        let myChart = null;
+        let transactionsData = [];
+        let expenseChart = null;
 
-        const authSection = document.getElementById('auth-section');
-        const appSection = document.getElementById('app-section');
-        const authForm = document.getElementById('auth-form');
-        const authTitle = document.getElementById('auth-title');
-        const authSubtitle = document.getElementById('auth-subtitle');
-        const authBtn = document.getElementById('auth-btn');
-        const authMessage = document.getElementById('auth-message');
-        const toggleContainer = document.getElementById('toggle-container');
-
-        const transactionForm = document.getElementById('transaction-form');
-        const formTitle = document.getElementById('form-title');
-        const submitBtn = document.getElementById('submit-btn');
-        const cancelEditBtn = document.getElementById('cancel-edit');
-        const editIdInput = document.getElementById('edit-id');
-        const tableBody = document.getElementById('transaction-table-body');
-        const totalBalanceEl = document.getElementById('total-balance').querySelector('span:nth-child(2)');
-        const filterMonthInput = document.getElementById('filter-month');
-
-        function checkAuth() {
-            if (currentUser) {
-                authSection.classList.add('hidden');
-                appSection.classList.remove('hidden');
-                document.getElementById('user-display').innerText = currentUsername;
-                fetchTransactions();
-            } else {
-                authSection.classList.remove('hidden');
-                appSection.classList.add('hidden');
-            }
-        }
-
-        function toggleAuthMode() {
-            isRegisterMode = !isRegisterMode;
-            authMessage.classList.add('hidden');
-            if (isRegisterMode) {
-                authTitle.innerText = '📝 Buat Akun Utama';
-                authSubtitle.innerText = 'Pendaftaran dibatasi hanya untuk 1 akun';
-                authBtn.innerText = 'Daftar';
-                toggleContainer.innerHTML = `Sudah punya akun? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold ml-1 hover:underline">Masuk di sini</button>`;
-            } else {
-                authTitle.innerText = '🔐 Login Finance Tracker';
-                authSubtitle.innerText = 'Silakan masuk dengan akun Anda';
-                authBtn.innerText = 'Masuk';
-                toggleContainer.innerHTML = `Belum punya akun? <button onclick="toggleAuthMode()" class="text-blue-600 font-semibold ml-1 hover:underline">Daftar di sini</button>`;
-            }
-        }
-
-        authForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const endpoint = isRegisterMode ? '/api/register' : '/api/login';
-
-            try {
-                const res = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
-                });
-                const data = await res.json();
-                
-                if (res.ok) {
-                    if (isRegisterMode) {
-                        alert(data.message);
-                        toggleAuthMode();
-                        authForm.reset();
-                    } else {
-                        localStorage.setItem('userId', data.userId);
-                        localStorage.setItem('username', data.username);
-                        currentUser = data.userId;
-                        currentUsername = data.username;
-                        checkAuth();
-                    }
-                } else {
-                    authMessage.innerText = data.error;
-                    authMessage.className = 'text-rose-500 text-xs text-center mt-2';
-                    authMessage.classList.remove('hidden');
-                }
-            } catch (err) {
-                console.error(err);
-            }
-        });
-
-        function logout() {
-            localStorage.clear();
-            currentUser = null;
-            currentUsername = null;
-            checkAuth();
-        }
-
+        // Cek Status Login saat halaman dimuat
         async function fetchTransactions() {
-            try {
-                const res = await fetch(`/api/transactions?userId=${currentUser}`);
-                const data = await res.json();
-                allTransactions = data.transactions;
+            const month = document.getElementById('filter-month').value;
+            let url = '/api/transactions';
+            if (month) url += `?month=${month}`;
 
-                const selectedMonth = filterMonthInput.value; // Format: YYYY-MM
-                const filtered = allTransactions.filter(tx => {
-                    if (!selectedMonth) return true;
-                    return tx.date.startsWith(selectedMonth);
-                });
-
-                renderTable(filtered);
-                renderChart(filtered);
-            } catch (err) {
-                console.error('Gagal memuat transaksi:', err);
-            }
-        }
-
-        function renderTable(transactions) {
-            tableBody.innerHTML = '';
-            let balance = 0;
-
-            if (transactions.length === 0) {
-                tableBody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-slate-400">Belum ada transaksi.</td></tr>`;
-                totalBalanceEl.innerText = 'Rp 0';
+            const res = await fetch(url);
+            if (res.status === 401) {
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('dashboard-section').classList.add('hidden');
                 return;
             }
-
-            let totalIncome = 0;
-            let totalExpense = 0;
-
-            transactions.forEach(tx => {
-                const isIncome = tx.type === 'income';
-                const amountFormatted = Number(tx.amount).toLocaleString('id-ID');
-                if (isIncome) {
-                    totalIncome += tx.amount;
-                    balance += tx.amount;
-                } else {
-                    totalExpense += tx.amount;
-                    balance -= tx.amount;
-                }
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td class="py-3 px-2 font-medium text-slate-700">
-                        <span class="inline-block px-2 py-0.5 text-xs rounded-full ${isIncome ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'} mb-1">${tx.type.toUpperCase()}</span><br>
-                        <span class="text-xs text-slate-400">${tx.date.substring(0,10)}</span> - ${tx.category}
-                    </td>
-                    <td class="py-3 px-2 text-slate-500 text-xs">${tx.description || '-'}</td>
-                    <td class="py-3 px-2 font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-600'}">
-                        ${isIncome ? '+' : '-'} Rp ${amountFormatted}
-                    </td>
-                    <td class="py-3 px-2 text-center space-x-2">
-                        <button onclick="editTransaction(${tx.id}, '${tx.type}', '${tx.category}', ${tx.amount}, '${tx.description || ''}')" class="text-blue-600 hover:text-blue-800 text-xs font-medium">Edit</button>
-                        <button onclick="deleteTransaction(${tx.id})" class="text-rose-600 hover:text-rose-800 text-xs font-medium">Hapus</button>
-                    </td>
-                `;
-                tableBody.appendChild(row);
-            });
-
-            totalBalanceEl.innerText = `Rp ${balance.toLocaleString('id-ID')}`;
-            totalBalanceEl.className = `text-xl font-bold ${balance >= 0 ? 'text-emerald-600' : 'text-rose-600'}`;
+            
+            transactionsData = await res.json();
+            document.getElementById('login-section').classList.add('hidden');
+            document.getElementById('dashboard-section').classList.remove('hidden');
+            
+            renderDashboard();
         }
 
-        function renderChart(transactions) {
+        // Render Data ke UI dan Chart
+        function renderDashboard() {
             let totalIncome = 0;
             let totalExpense = 0;
+            const tbody = document.getElementById('transaction-table-body');
+            tbody.innerHTML = '';
 
-            transactions.forEach(tx => {
+            let categoryMap = {};
+
+            transactionsData.forEach(tx => {
                 if (tx.type === 'income') totalIncome += tx.amount;
-                else totalExpense += tx.amount;
+                else {
+                    totalExpense += tx.amount;
+                    categoryMap[tx.category] = (categoryMap[tx.category] || 0) + tx.amount;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="p-3">${tx.date}</td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${tx.scope === 'Bisnis' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">${tx.scope}</span></td>
+                    <td class="p-3 font-medium">${tx.category}</td>
+                    <td class="p-3 text-gray-500">${tx.description || '-'}</td>
+                    <td class="p-3 font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}">
+                        ${tx.type === 'income' ? '+' : '-'} Rp ${tx.amount.toLocaleString('id-ID')}
+                    </td>
+                    <td class="p-3 text-center">
+                        <button onclick="deleteTransaction(${tx.id})" class="text-red-500 hover:text-red-700 text-xs bg-red-50 px-2 py-1 rounded">Hapus</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
             });
 
-            const ctx = document.getElementById('financeChart').getContext('2d');
-            if (myChart) myChart.destroy();
+            document.getElementById('total-income').innerText = `Rp ${totalIncome.toLocaleString('id-ID')}`;
+            document.getElementById('total-expense').innerText = `Rp ${totalExpense.toLocaleString('id-ID')}`;
+            document.getElementById('total-balance').innerText = `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
 
-            myChart = new Chart(ctx, {
+            updateChart(categoryMap);
+        }
+
+        // Update Grafik Chart.js
+        function updateChart(categoryMap) {
+            const ctx = document.getElementById('expenseChart').getContext('2d');
+            const labels = Object.keys(categoryMap);
+            const data = Object.values(categoryMap);
+
+            if (expenseChart) expenseChart.destroy();
+
+            expenseChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Pemasukan', 'Pengeluaran'],
+                    labels: labels.length > 0 ? labels : ['Belum ada pengeluaran'],
                     datasets: [{
-                        data: [totalIncome, totalExpense],
-                        backgroundColor: ['#10b981', '#f43f5e']
+                        data: data.length > 0 ? data : [1],
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#3b82f6', '#8b5cf6', '#ec4899']
                     }]
                 },
                 options: {
@@ -314,90 +213,99 @@
             });
         }
 
-        transactionForm.addEventListener('submit', async (e) => {
+        // Login Handler
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const id = editIdInput.value;
-            const type = document.getElementById('type').value;
-            const category = document.getElementById('category').value;
-            const amount = parseFloat(document.getElementById('amount').value);
-            const description = document.getElementById('description').value;
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
 
-            const url = id ? `/api/transactions/${id}` : '/api/transactions';
-            const method = id ? 'PUT' : 'POST';
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
 
-            try {
-                const res = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: currentUser, type, category, amount, description })
-                });
-
-                if (res.ok) {
-                    resetForm();
-                    fetchTransactions();
-                } else {
-                    alert('Gagal menyimpan transaksi.');
-                }
-            } catch (err) {
-                console.error(err);
+            if (res.ok) {
+                fetchTransactions();
+            } else {
+                const err = await res.json();
+                const errEl = document.getElementById('login-error');
+                errEl.innerText = err.error;
+                errEl.classList.remove('hidden');
             }
         });
 
-        function editTransaction(id, type, category, amount, description) {
-            editIdInput.value = id;
-            document.getElementById('type').value = type;
-            document.getElementById('category').value = category;
-            document.getElementById('amount').value = amount;
-            document.getElementById('description').value = description === 'null' ? '' : description;
+        // Logout Handler
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            fetchTransactions();
+        });
 
-            formTitle.innerText = 'Edit Transaksi';
-            submitBtn.innerText = 'Perbarui';
-            submitBtn.className = 'flex-1 bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 rounded-lg transition text-sm';
-            cancelEditBtn.classList.remove('hidden');
-        }
+        // Tambah Transaksi Handler
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const body = {
+                type: document.getElementById('tx-type').value,
+                scope: document.getElementById('tx-scope').value,
+                category: document.getElementById('tx-category').value,
+                amount: parseFloat(document.getElementById('tx-amount').value),
+                description: document.getElementById('tx-desc').value,
+                date: document.getElementById('tx-date').value
+            };
 
-        function resetForm() {
-            transactionForm.reset();
-            editIdInput.value = '';
-            formTitle.innerText = 'Tambah Transaksi';
-            submitBtn.innerText = 'Simpan';
-            submitBtn.className = 'flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded-lg transition text-sm';
-            cancelEditBtn.classList.add('hidden');
-        }
+            const res = await fetch('/api/transactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
 
+            if (res.ok) {
+                document.getElementById('transaction-form').reset();
+                document.getElementById('tx-date').valueAsDate = new Date();
+                fetchTransactions();
+            }
+        });
+
+        // Hapus Transaksi
         async function deleteTransaction(id) {
-            if (!confirm('Apakah Anda yakin ingin menghapus transaksi ini?')) return;
-            try {
-                const res = await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-                if (res.ok) {
-                    fetchTransactions();
-                } else {
-                    alert('Gagal menghapus transaksi.');
-                }
-            } catch (err) {
-                console.error(err);
+            if (confirm('Yakin ingin menghapus transaksi ini?')) {
+                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                fetchTransactions();
             }
         }
 
-        function exportToCSV() {
-            if (allTransactions.length === 0) {
-                alert('Tidak ada data untuk diekspor!');
+        // Filter Bulan & Reset
+        document.getElementById('filter-month').addEventListener('change', fetchTransactions);
+        document.getElementById('reset-filter').addEventListener('click', () => {
+            document.getElementById('filter-month').value = '';
+            fetchTransactions();
+        });
+
+        // Ekspor CSV Handler
+        document.getElementById('export-csv').addEventListener('click', () => {
+            if (transactionsData.length === 0) {
+                alert('Tidak ada data untuk diekspor.');
                 return;
             }
-            let csvContent = "data:text/csv;charset=utf-8,ID,Tipe,Kategori,Jumlah,Keterangan,Tanggal\r\n";
-            allTransactions.forEach(tx => {
-                csvContent += `${tx.id},${tx.type},"${tx.category}",${tx.amount},"${tx.description || ''}",${tx.date}\r\n`;
+
+            let csvContent = "data:text/csv;charset=utf-8,Tanggal,Lingkup,Kategori,Tipe,Nominal,Deskripsi\r\n";
+            transactionsData.forEach(tx => {
+                let row = [tx.date, tx.scope, tx.category, tx.type, tx.amount, `"${tx.description || ''}"`].join(",");
+                csvContent += row + "\r\n";
             });
+
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "laporan_keuangan.csv");
+            link.setAttribute("download", `laporan_keuangan_${document.getElementById('filter-month').value || 'semua'}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-        }
+        });
 
-        checkAuth();
+        // Set tanggal default ke hari ini
+        document.getElementById('tx-date').valueAsDate = new Date();
+        fetchTransactions();
     </script>
 </body>
 </html>

@@ -1,126 +1,115 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
+const session = require('express-session');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Konfigurasi Database SQLite
+const db = new sqlite3.Database('./finance.db', (err) => {
+    if (err) console.error('Gagal terhubung ke database', err.message);
+    else console.log('Terhubung ke database SQLite.');
+});
+
+// Buat Tabel Pengguna dan Transaksi
+db.serialize(() => {
+    db.run(`CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT
+    )`);
+
+    db.run(`CREATE TABLE IF NOT EXISTS transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        type TEXT, -- 'income' atau 'expense'
+        category TEXT, -- contoh: 'Makanan', 'Transportasi', dll
+        scope TEXT, -- 'Pribadi' atau 'Bisnis'
+        amount REAL,
+        description TEXT,
+        date TEXT,
+        FOREIGN KEY(user_id) REFERENCES users(id)
+    )`);
+});
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const dbPath = path.resolve(__dirname, 'finance.db');
-const db = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Gagal terhubung ke database:', err.message);
-  } else {
-    console.log('Terhubung ke database SQLite.');
-  }
-});
+app.use(session({
+    secret: 'finance-app-secret-key',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 Hari
+}));
 
-db.serialize(() => {
-  db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL
-  )`);
+// Middleware Cek Autentikasi
+function isAuthenticated(req, res, next) {
+    if (req.session.userId) return next();
+    res.status(401).json({ error: 'Unauthorized' });
+}
 
-  db.run(`CREATE TABLE IF NOT EXISTS transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    userId INTEGER,
-    type TEXT NOT NULL,       
-    category TEXT NOT NULL,   
-    amount REAL NOT NULL,     
-    description TEXT,         
-    date TEXT DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(userId) REFERENCES users(id)
-  )`);
-});
-
-// Register (Dibatasi Maksimal 1 Akun)
-app.post('/api/register', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username dan password wajib diisi!' });
-  }
-
-  db.get(`SELECT COUNT(*) as count FROM users`, async (err, row) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (row.count >= 1) {
-      return res.status(403).json({ error: 'Pendaftaran ditutup! Aplikasi ini dibatasi hanya untuk 1 akun pemilik.' });
-    }
-
-    try {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ success: true, message: 'Registrasi akun utama berhasil! Silakan login.' });
-      });
-    } catch (err) {
-      res.status(500).json({ error: 'Terjadi kesalahan pada server.' });
-    }
-  });
-});
-
-// Login
+// Route Login
 app.post('/api/login', (req, res) => {
-  const { username, password } = req.body;
-  db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
-    if (err) return res.status(500).json({ error: err.message });
-    if (!user) return res.status(401).json({ error: 'Username atau password salah!' });
+    const { username, password } = req.body;
+    db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
+        if (err) return res.status(500).json({ error: 'Database error' });
+        if (!user) return res.status(400).json({ error: 'Username atau password salah' });
 
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) return res.status(401).json({ error: 'Username atau password salah!' });
+        const match = await bcrypt.compare(password, user.password);
+        if (!match) return res.status(400).json({ error: 'Username atau password salah' });
 
-    res.json({ success: true, message: 'Login berhasil', userId: user.id, username: user.username });
-  });
+        req.session.userId = user.id;
+        req.json({ message: 'Login berhasil' });
+    });
 });
 
-// Ambil Transaksi
-app.get('/api/transactions', (req, res) => {
-  const userId = req.query.userId;
-  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
-
-  db.all(`SELECT * FROM transactions WHERE userId = ? ORDER BY date DESC, id DESC`, [userId], (err, rows) => {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ transactions: rows });
-  });
+// Route Logout
+app.post('/api/logout', (req, res) => {
+    req.session.destroy(() => {
+        res.json({ message: 'Logout berhasil' });
+    });
 });
 
-// Tambah Transaksi
-app.post('/api/transactions', (req, res) => {
-  const { userId, type, category, amount, description } = req.body;
-  if (!userId || !type || !category || !amount) {
-    return res.status(400).json({ error: 'Data tidak lengkap!' });
-  }
+// Ambil Semua Transaksi (Mendukung Filter Bulan YYYY-MM)
+app.get('/api/transactions', isAuthenticated, (req, res) => {
+    const { month } = req.query; // Format: YYYY-MM
+    let query = `SELECT * FROM transactions WHERE user_id = ?`;
+    let params = [req.session.userId];
 
-  const query = `INSERT INTO transactions (userId, type, category, amount, description) VALUES (?, ?, ?, ?, ?)`;
-  db.run(query, [userId, type, category, amount, description], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ id: this.lastID, message: 'Transaksi berhasil disimpan!' });
-  });
+    if (month) {
+        query += ` AND date LIKE ?`;
+        params.push(`${month}%`);
+    }
+
+    query += ` ORDER BY date DESC`;
+
+    db.all(query, params, (err, rows) => {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json(rows);
+    });
 });
 
-// Edit Transaksi
-app.put('/api/transactions/:id', (req, res) => {
-  const { id } = req.params;
-  const { type, category, amount, description } = req.body;
-  const query = `UPDATE transactions SET type = ?, category = ?, amount = ?, description = ? WHERE id = ?`;
-  db.run(query, [type, category, amount, description, id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Transaksi berhasil diperbarui!' });
-  });
+// Tambah Transaksi Baru
+app.post('/api/transactions', isAuthenticated, (req, res) => {
+    const { type, category, scope, amount, description, date } = req.body;
+    const query = `INSERT INTO transactions (user_id, type, category, scope, amount, description, date) VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    
+    db.run(query, [req.session.userId, type, category, scope || 'Pribadi', amount, description, date], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ id: this.lastID, message: 'Transaksi berhasil ditambahkan' });
+    });
 });
 
 // Hapus Transaksi
-app.delete('/api/transactions/:id', (req, res) => {
-  const { id } = req.params;
-  db.run(`DELETE FROM transactions WHERE id = ?`, [id], function(err) {
-    if (err) return res.status(500).json({ error: err.message });
-    res.json({ message: 'Transaksi berhasil dihapus!' });
-  });
+app.delete('/api/transactions/:id', isAuthenticated, (req, res) => {
+    db.run(`DELETE FROM transactions WHERE id = ? AND user_id = ?`, [req.params.id, req.session.userId], function(err) {
+        if (err) return res.status(500).json({ error: err.message });
+        res.json({ message: 'Transaksi berhasil dihapus' });
+    });
 });
 
 app.listen(PORT, () => {
-  console.log(`Server berjalan di port ${PORT}`);
-});
+    console.log(`Server berjalan di port ${PORT}`);
