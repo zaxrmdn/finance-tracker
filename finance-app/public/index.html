@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Finance Tracker - Tabungan & Hutang</title>
+    <title>Personal & Business Finance Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -11,27 +11,35 @@
 
     <div id="app" class="max-w-6xl mx-auto p-4 md:p-8">
         
-        <!-- Bagian Login -->
+        <!-- Bagian Login & Register -->
         <div id="login-section" class="max-w-md mx-auto bg-white p-6 rounded-xl shadow-md mt-10">
-            <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">Login Keuangan</h2>
-            <form id="login-form" class="space-y-4">
+            <div class="flex border-b mb-6">
+                <button id="tab-login-btn" onclick="switchAuthTab('login')" class="w-1/2 pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-center text-sm">Login</button>
+                <button id="tab-register-btn" onclick="switchAuthTab('register')" class="w-1/2 pb-2 font-semibold text-gray-400 text-center text-sm">Daftar</button>
+            </div>
+
+            <form id="auth-form" class="space-y-4">
+                <h2 id="auth-form-title" class="text-xl font-bold mb-4 text-center text-gray-700">Masuk Akun</h2>
                 <div>
                     <label class="block text-sm font-medium mb-1">Username</label>
-                    <input type="text" id="username" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+                    <input type="text" id="auth-username" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 text-sm">
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Password</label>
-                    <input type="password" id="password" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300">
+                    <input type="password" id="auth-password" required class="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 text-sm">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg font-semibold hover:bg-blue-700">Masuk</button>
+                <button type="submit" id="auth-submit-btn" class="w-full bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Masuk</button>
             </form>
-            <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden"></p>
+            <p id="auth-message" class="text-sm mt-3 text-center hidden"></p>
         </div>
 
         <!-- Bagian Dashboard Utama -->
         <div id="dashboard-section" class="hidden space-y-6">
             <div class="flex justify-between items-center bg-white p-4 rounded-xl shadow-sm">
-                <h1 class="text-xl font-bold text-gray-700">💰 Financial Dashboard & Goals</h1>
+                <div>
+                    <h1 class="text-xl font-bold text-gray-700">💰 Financial Dashboard & Goals</h1>
+                    <p class="text-xs text-gray-500">Halo, <span id="user-display" class="font-semibold text-blue-600"></span></p>
+                </div>
                 <button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600">Logout</button>
             </div>
 
@@ -66,7 +74,8 @@
 
                     <!-- Form Tambah Transaksi -->
                     <form id="transaction-form" class="space-y-3 pt-4 border-t">
-                        <h4 class="font-semibold text-sm text-gray-600">Tambah Transaksi</h4>
+                        <input type="hidden" id="tx-edit-id">
+                        <h4 id="tx-form-title" class="font-semibold text-sm text-gray-600">Tambah Transaksi</h4>
                         <div class="grid grid-cols-2 gap-2">
                             <select id="tx-type" class="border rounded-lg p-2 text-sm">
                                 <option value="income">Pemasukan</option>
@@ -85,7 +94,10 @@
                             <input type="text" id="tx-desc" placeholder="Deskripsi" class="border rounded-lg p-2 text-sm">
                             <input type="date" id="tx-date" required class="border rounded-lg p-2 text-sm">
                         </div>
-                        <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan Transaksi</button>
+                        <div class="flex gap-2">
+                            <button type="submit" id="tx-submit-btn" class="flex-1 bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700">Simpan Transaksi</button>
+                            <button type="button" id="tx-cancel-btn" onclick="resetTxForm()" class="hidden bg-gray-300 text-gray-700 px-3 py-2 rounded-lg text-sm">Batal</button>
+                        </div>
                     </form>
                 </div>
 
@@ -98,9 +110,8 @@
                 </div>
             </div>
 
-            <!-- FITUR TABUNGAN & HUTANG -->
+            <!-- TABUNGAN & HUTANG -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                
                 <!-- Panel Tabungan -->
                 <div class="bg-white p-6 rounded-xl shadow-sm space-y-4">
                     <h3 class="font-bold text-lg text-gray-700">🎯 Target Tabungan (Saving Goals)</h3>
@@ -134,7 +145,6 @@
                     </form>
                     <div id="debts-list" class="space-y-3 max-h-60 overflow-y-auto"></div>
                 </div>
-
             </div>
 
             <!-- Tabel Riwayat Transaksi -->
@@ -158,10 +168,53 @@
 
     </div>
 
-    <!-- Script Utama Frontend -->
+    <!-- Script Frontend -->
     <script>
         let transactionsData = [];
         let expenseChart = null;
+        let authMode = 'login';
+
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const titleEl = document.getElementById('auth-form-title');
+            const submitBtn = document.getElementById('auth-submit-btn');
+            const loginBtn = document.getElementById('tab-login-btn');
+            const regBtn = document.getElementById('tab-register-btn');
+            const msgEl = document.getElementById('auth-message');
+            msgEl.classList.add('hidden');
+
+            if (mode === 'login') {
+                titleEl.innerText = 'Masuk Akun';
+                submitBtn.innerText = 'Masuk';
+                submitBtn.className = 'w-full bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700';
+                loginBtn.className = "w-1/2 pb-2 font-bold text-blue-600 border-b-2 border-blue-600 text-center text-sm";
+                regBtn.className = "w-1/2 pb-2 font-semibold text-gray-400 text-center text-sm";
+            } else {
+                titleEl.innerText = 'Daftar Akun Baru';
+                submitBtn.innerText = 'Daftar';
+                submitBtn.className = 'w-full bg-green-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-green-700';
+                regBtn.className = "w-1/2 pb-2 font-bold text-green-600 border-b-2 border-green-600 text-center text-sm";
+                loginBtn.className = "w-1/2 pb-2 font-semibold text-gray-400 text-center text-sm";
+            }
+        }
+
+        async function checkSession() {
+            try {
+                const res = await fetch('/api/check-session');
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById('user-display').innerText = data.username;
+                    document.getElementById('login-section').classList.add('hidden');
+                    document.getElementById('dashboard-section').classList.remove('hidden');
+                    loadAllData();
+                } else {
+                    document.getElementById('login-section').classList.remove('hidden');
+                    document.getElementById('dashboard-section').classList.add('hidden');
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
 
         async function loadAllData() {
             await fetchTransactions();
@@ -169,21 +222,50 @@
             await fetchDebts();
         }
 
+        document.getElementById('auth-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('auth-username').value;
+            const password = document.getElementById('auth-password').value;
+            const endpoint = authMode === 'login' ? '/api/login' : '/api/register';
+            const msgEl = document.getElementById('auth-message');
+
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            msgEl.classList.remove('hidden');
+            if (res.ok) {
+                msgEl.className = "text-green-600 text-sm mt-3 text-center";
+                msgEl.innerText = data.message;
+                if (authMode === 'register') {
+                    setTimeout(() => switchAuthTab('login'), 1200);
+                } else {
+                    checkSession();
+                }
+            } else {
+                msgEl.className = "text-red-500 text-sm mt-3 text-center";
+                msgEl.innerText = data.error;
+            }
+        });
+
+        document.getElementById('logout-btn').addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST' });
+            checkSession();
+        });
+
         async function fetchTransactions() {
             const month = document.getElementById('filter-month').value;
             let url = '/api/transactions';
             if (month) url += `?month=${month}`;
 
             const res = await fetch(url);
-            if (res.status === 401) {
-                document.getElementById('login-section').classList.remove('hidden');
-                document.getElementById('dashboard-section').classList.add('hidden');
-                return;
+            if (res.ok) {
+                transactionsData = await res.json();
+                renderTransactions();
             }
-            transactionsData = await res.json();
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
-            renderTransactions();
         }
 
         function renderTransactions() {
@@ -204,13 +286,14 @@
                 tr.className = 'border-b hover:bg-gray-50';
                 tr.innerHTML = `
                     <td class="p-3">${tx.date}</td>
-                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${tx.scope === 'Bisnis' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">${tx.scope}</span></td>
+                    <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${tx.scope === 'Bisnis' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'}">${tx.scope || 'Pribadi'}</span></td>
                     <td class="p-3 font-medium">${tx.category}</td>
                     <td class="p-3 text-gray-500">${tx.description || '-'}</td>
                     <td class="p-3 font-semibold ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}">
                         ${tx.type === 'income' ? '+' : '-'} Rp ${tx.amount.toLocaleString('id-ID')}
                     </td>
-                    <td class="p-3 text-center">
+                    <td class="p-3 text-center space-x-1">
+                        <button onclick="editTransaction(${tx.id}, '${tx.type}', '${tx.scope || 'Pribadi'}', '${tx.category}', ${tx.amount}, '${tx.description || ''}', '${tx.date}')" class="text-blue-500 hover:text-blue-700 text-xs bg-blue-50 px-2 py-1 rounded">Edit</button>
                         <button onclick="deleteTransaction(${tx.id})" class="text-red-500 hover:text-red-700 text-xs bg-red-50 px-2 py-1 rounded">Hapus</button>
                     </td>
                 `;
@@ -222,6 +305,65 @@
             document.getElementById('total-balance').innerText = `Rp ${(totalIncome - totalExpense).toLocaleString('id-ID')}`;
 
             updateChart(categoryMap);
+        }
+
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('tx-edit-id').value;
+            const body = {
+                type: document.getElementById('tx-type').value,
+                scope: document.getElementById('tx-scope').value,
+                category: document.getElementById('tx-category').value,
+                amount: parseFloat(document.getElementById('tx-amount').value),
+                description: document.getElementById('tx-desc').value,
+                date: document.getElementById('tx-date').value
+            };
+
+            const url = id ? `/api/transactions/${id}` : '/api/transactions';
+            const method = id ? 'PUT' : 'POST';
+
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+
+            if (res.ok) {
+                resetTxForm();
+                loadAllData();
+            }
+        });
+
+        function editTransaction(id, type, scope, category, amount, description, date) {
+            document.getElementById('tx-edit-id').value = id;
+            document.getElementById('tx-type').value = type;
+            document.getElementById('tx-scope').value = scope;
+            document.getElementById('tx-category').value = category;
+            document.getElementById('tx-amount').value = amount;
+            document.getElementById('tx-desc').value = description === 'null' ? '' : description;
+            document.getElementById('tx-date').value = date;
+
+            document.getElementById('tx-form-title').innerText = 'Edit Transaksi';
+            document.getElementById('tx-submit-btn').innerText = 'Perbarui Transaksi';
+            document.getElementById('tx-submit-btn').className = 'flex-1 bg-amber-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-amber-700';
+            document.getElementById('tx-cancel-btn').classList.remove('hidden');
+        }
+
+        function resetTxForm() {
+            document.getElementById('transaction-form').reset();
+            document.getElementById('tx-edit-id').value = '';
+            document.getElementById('tx-form-title').innerText = 'Tambah Transaksi';
+            document.getElementById('tx-submit-btn').innerText = 'Simpan Transaksi';
+            document.getElementById('tx-submit-btn').className = 'flex-1 bg-blue-600 text-white p-2 rounded-lg text-sm font-semibold hover:bg-blue-700';
+            document.getElementById('tx-cancel-btn').classList.add('hidden');
+            document.getElementById('tx-date').valueAsDate = new Date();
+        }
+
+        async function deleteTransaction(id) {
+            if (confirm('Hapus transaksi ini?')) {
+                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
+                loadAllData();
+            }
         }
 
         async function fetchSavings() {
@@ -253,73 +395,6 @@
                 listEl.appendChild(div);
             });
         }
-
-        async function fetchDebts() {
-            const res = await fetch('/api/debts');
-            const debts = await res.json();
-            const listEl = document.getElementById('debts-list');
-            listEl.innerHTML = '';
-
-            debts.forEach(d => {
-                const div = document.createElement('div');
-                div.className = 'p-3 border rounded-lg bg-gray-50 flex justify-between items-center text-sm';
-                div.innerHTML = `
-                    <div>
-                        <p class="font-semibold">${d.person_name} <span class="text-xs px-2 py-0.5 rounded ${d.type === 'piutang' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}">${d.type.toUpperCase()}</span></p>
-                        <p class="text-xs text-gray-500">Rp ${d.amount.toLocaleString('id-ID')} - <span class="${d.status === 'Lunas' ? 'text-green-600 font-semibold' : 'text-red-500'}">${d.status}</span></p>
-                    </div>
-                    <div class="space-x-1">
-                        ${d.status !== 'Lunas' ? `<button onclick="payDebt(${d.id})" class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Lunasi</button>` : ''}
-                        <button onclick="deleteDebt(${d.id})" class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Hapus</button>
-                    </div>
-                `;
-                listEl.appendChild(div);
-            });
-        }
-
-        // Form Event Listeners
-        document.getElementById('login-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const res = await fetch('/api/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    username: document.getElementById('username').value,
-                    password: document.getElementById('password').value
-                })
-            });
-            if (res.ok) loadAllData();
-            else {
-                const err = await res.json();
-                const errEl = document.getElementById('login-error');
-                errEl.innerText = err.error;
-                errEl.classList.remove('hidden');
-            }
-        });
-
-        document.getElementById('logout-btn').addEventListener('click', async () => {
-            await fetch('/api/logout', { method: 'POST' });
-            loadAllData();
-        });
-
-        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            await fetch('/api/transactions', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    type: document.getElementById('tx-type').value,
-                    scope: document.getElementById('tx-scope').value,
-                    category: document.getElementById('tx-category').value,
-                    amount: parseFloat(document.getElementById('tx-amount').value),
-                    description: document.getElementById('tx-desc').value,
-                    date: document.getElementById('tx-date').value
-                })
-            });
-            e.target.reset();
-            document.getElementById('tx-date').valueAsDate = new Date();
-            loadAllData();
-        });
 
         document.getElementById('saving-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -355,6 +430,29 @@
             }
         }
 
+        async function fetchDebts() {
+            const res = await fetch('/api/debts');
+            const debts = await res.json();
+            const listEl = document.getElementById('debts-list');
+            listEl.innerHTML = '';
+
+            debts.forEach(d => {
+                const div = document.createElement('div');
+                div.className = 'p-3 border rounded-lg bg-gray-50 flex justify-between items-center text-sm';
+                div.innerHTML = `
+                    <div>
+                        <p class="font-semibold">${d.person_name} <span class="text-xs px-2 py-0.5 rounded ${d.type === 'piutang' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}">${d.type.toUpperCase()}</span></p>
+                        <p class="text-xs text-gray-500">Rp ${d.amount.toLocaleString('id-ID')} - <span class="${d.status === 'Lunas' ? 'text-green-600 font-semibold' : 'text-red-500'}">${d.status}</span></p>
+                    </div>
+                    <div class="space-x-1">
+                        ${d.status !== 'Lunas' ? `<button onclick="payDebt(${d.id})" class="bg-green-100 text-green-700 text-xs px-2 py-1 rounded">Lunasi</button>` : ''}
+                        <button onclick="deleteDebt(${d.id})" class="bg-red-100 text-red-700 text-xs px-2 py-1 rounded">Hapus</button>
+                    </div>
+                `;
+                listEl.appendChild(div);
+            });
+        }
+
         document.getElementById('debt-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             await fetch('/api/debts', {
@@ -380,13 +478,6 @@
             if (confirm('Hapus catatan hutang ini?')) {
                 await fetch(`/api/debts/${id}`, { method: 'DELETE' });
                 fetchDebts();
-            }
-        }
-
-        async function deleteTransaction(id) {
-            if (confirm('Hapus transaksi ini?')) {
-                await fetch(`/api/transactions/${id}`, { method: 'DELETE' });
-                loadAllData();
             }
         }
 
@@ -419,7 +510,7 @@
             if (transactionsData.length === 0) return alert('Tidak ada data.');
             let csvContent = "data:text/csv;charset=utf-8,Tanggal,Lingkup,Kategori,Tipe,Nominal,Deskripsi\r\n";
             transactionsData.forEach(tx => {
-                csvContent += [tx.date, tx.scope, tx.category, tx.type, tx.amount, `"${tx.description || ''}"`].join(",") + "\r\n";
+                csvContent += [tx.date, tx.scope || 'Pribadi', tx.category, tx.type, tx.amount, `"${tx.description || ''}"`].join(",") + "\r\n";
             });
             const link = document.createElement("a");
             link.setAttribute("href", encodeURI(csvContent));
@@ -430,7 +521,7 @@
         });
 
         document.getElementById('tx-date').valueAsDate = new Date();
-        loadAllData();
+        checkSession();
     </script>
 </body>
 </html>

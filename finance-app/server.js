@@ -8,8 +8,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Konfigurasi Database SQLite
-const db = new sqlite3.Database('./finance.db', (err) => {
-    if (err) console.error('Gagal terhubung ke database', err.message);
+const dbPath = path.resolve(__dirname, 'finance.db');
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) console.error('Gagal terhubung ke database:', err.message);
     else console.log('Terhubung ke database SQLite.');
 });
 
@@ -17,18 +18,18 @@ const db = new sqlite3.Database('./finance.db', (err) => {
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT UNIQUE,
-        password TEXT
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
     )`);
 
     db.run(`CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
-        type TEXT, -- 'income' atau 'expense'
-        category TEXT,
-        scope TEXT, -- 'Pribadi' atau 'Bisnis'
-        amount REAL,
-        description TEXT,
+        type TEXT NOT NULL,       -- 'income' atau 'expense'
+        category TEXT NOT NULL,   
+        scope TEXT,               -- 'Pribadi' atau 'Bisnis'
+        amount REAL NOT NULL,     
+        description TEXT,         
         date TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
@@ -72,7 +73,22 @@ function isAuthenticated(req, res, next) {
     res.status(401).json({ error: 'Unauthorized' });
 }
 
-// Route Login & Logout
+// --- AUTH API ---
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) return res.status(400).json({ error: 'Username dan password wajib diisi' });
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        db.run(`INSERT INTO users (username, password) VALUES (?, ?)`, [username, hashedPassword], function(err) {
+            if (err) return res.status(400).json({ error: 'Username sudah digunakan' });
+            res.json({ message: 'Registrasi berhasil, silakan login.' });
+        });
+    } catch (err) {
+        res.status(500).json({ error: 'Terjadi kesalahan pada server' });
+    }
+});
+
 app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     db.get(`SELECT * FROM users WHERE username = ?`, [username], async (err, user) => {
@@ -80,12 +96,17 @@ app.post('/api/login', (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(400).json({ error: 'Username atau password salah' });
         req.session.userId = user.id;
-        res.json({ message: 'Login berhasil' });
+        req.session.username = user.username;
+        res.json({ message: 'Login berhasil', username: user.username });
     });
 });
 
 app.post('/api/logout', (req, res) => {
     req.session.destroy(() => res.json({ message: 'Logout berhasil' }));
+});
+
+app.get('/api/check-session', isAuthenticated, (req, res) => {
+    res.json({ loggedIn: true, username: req.session.username });
 });
 
 // --- TRANSACTIONS API ---
@@ -108,6 +129,17 @@ app.post('/api/transactions', isAuthenticated, (req, res) => {
         function(err) {
             if (err) return res.status(500).json({ error: err.message });
             res.json({ id: this.lastID, message: 'Transaksi berhasil ditambahkan' });
+        }
+    );
+});
+
+app.put('/api/transactions/:id', isAuthenticated, (req, res) => {
+    const { type, category, scope, amount, description, date } = req.body;
+    db.run(`UPDATE transactions SET type = ?, category = ?, scope = ?, amount = ?, description = ?, date = ? WHERE id = ? AND user_id = ?`,
+        [type, category, scope, amount, description, date, req.params.id, req.session.userId],
+        function(err) {
+            if (err) return res.status(500).json({ error: err.message });
+            res.json({ message: 'Transaksi berhasil diperbarui' });
         }
     );
 });
