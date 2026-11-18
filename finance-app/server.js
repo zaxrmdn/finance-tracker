@@ -47,10 +47,10 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
         person_name TEXT NOT NULL,
-        type TEXT NOT NULL, -- 'hutang' (Anda berhutang) atau 'piutang' (Orang lain berhutang)
+        type TEXT NOT NULL, -- 'hutang' atau 'piutang'
         amount REAL NOT NULL,
         due_date TEXT,
-        status TEXT DEFAULT 'Belum Lunas', -- 'Belum Lunas' atau 'Lunas'
+        status TEXT DEFAULT 'Belum Lunas',
         description TEXT,
         FOREIGN KEY(user_id) REFERENCES users(id)
     )`);
