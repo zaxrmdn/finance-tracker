@@ -13,6 +13,6 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./finance.db:/app/finance.db   # Mount langsung ke file yang baru saja kita buat
+      - ./finance.db:/app/finance.db
     networks:
       - app-net
